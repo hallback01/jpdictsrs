@@ -1,0 +1,1 @@
+cmake -B build/ -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=RELEASE && cmake --build build --config Release -j16
