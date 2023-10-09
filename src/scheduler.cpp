@@ -121,6 +121,19 @@ std::vector<Vocabulary*> Scheduler::vocabulary_inside_time_interval(int64_t seco
     return vocab;
 }
 
+size_t Scheduler::vocabulary_inside_time_interval_count(int64_t seconds) {
+    size_t count = 0;
+    int64_t epoch = Jikan::epoch_time_seconds();
+    for(size_t i = 0; i < m_vocabulary.size(); i++) {
+        if((epoch + seconds) > m_vocabulary[i]->next_level_time()) {
+            count++;
+        } else {
+            break;
+        }
+    }
+    return count;
+}
+
 bool compare_by_time_until_review(Vocabulary* a, Vocabulary* b) {
     return a->next_level_time() < b->next_level_time();
 }

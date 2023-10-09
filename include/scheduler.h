@@ -13,6 +13,7 @@ class Scheduler {
         void remove(uint64_t seq_id);
         std::vector<Vocabulary*> reviewable_vocabulary();
         size_t reviewable_vocabulary_count();
+        size_t vocabulary_inside_time_interval_count(int64_t seconds);
         std::vector<Vocabulary*> vocabulary_inside_time_interval(int64_t seconds);
         Vocabulary* vocabulary(uint64_t sequence_id);
         void sort();

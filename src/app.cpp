@@ -96,7 +96,11 @@ void App::status_bar() {
 
     move(0, 0);
     size_t reviewable_vocab = m_scheduler->reviewable_vocabulary_count();
-    printw("%d vocabulary to review now", reviewable_vocab);
+    if(reviewable_vocab != 0) {
+        printw("%d vocabulary to review now", reviewable_vocab);
+    } else {
+        printw("%d vocabulary due in the next day", m_scheduler->vocabulary_inside_time_interval_count(86400));
+    }
     move(1, 0);
 
     attroff(COLOR_PAIR(5));
@@ -454,6 +458,7 @@ uint8_t App::review() {
                     //otherwise increase the level if this attempt was the first one
                     temporary_vocabs[random_vocab].vocab->increase_level();
                 }
+                m_scheduler->sort();
 
                 //replace the vocab with a new one
                 temporary_vocabs.erase(temporary_vocabs.begin() + random_vocab);
