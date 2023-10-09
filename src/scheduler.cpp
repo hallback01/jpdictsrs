@@ -79,19 +79,17 @@ bool Scheduler::add(uint64_t seq_id) {
 }
 
 std::vector<Vocabulary*> Scheduler::reviewable_vocabulary() {
-    static std::vector<Vocabulary*> vocab;
     int64_t epoch = Jikan::epoch_time_seconds();
-    
-    vocab.clear();
+    static std::vector<Vocabulary*> vocab_vec;
+    vocab_vec.clear();
     for(size_t i = 0; i < m_vocabulary.size(); i++) {
         if(epoch > m_vocabulary[i]->next_level_time()) {
-            vocab.push_back(m_vocabulary[i]);
+            vocab_vec.push_back(m_vocabulary[i]);
         } else {
             break;
         }
     }
-
-    return vocab;
+    return vocab_vec;
 }
 
 size_t Scheduler::reviewable_vocabulary_count() {

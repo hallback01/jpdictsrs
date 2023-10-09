@@ -23,6 +23,7 @@ class App {
         uint8_t search_result();
         uint8_t no_results();
         uint8_t remove_vocab_confirm();
+        uint8_t review();
 
         void draw_entry(int32_t& scroll, bool hide_definition, std::vector<Line>& info);
         void fill_lines(JMEntry* entry, std::vector<Line>& info);

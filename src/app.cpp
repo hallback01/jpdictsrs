@@ -10,6 +10,8 @@
 #define COLOR_BRIGHT    0
 #define COLOR_MIDDLE    1
 
+#define MAX_TEMP_VOCAB  8
+
 App::App(JMDict* dictionary, Scheduler* scheduler) {
 
     m_jmdict = dictionary;
@@ -59,6 +61,11 @@ App::App(JMDict* dictionary, Scheduler* scheduler) {
 
             case 4: {
                 choice = remove_vocab_confirm();
+                break;
+            }
+
+            case 5: {
+                choice = review();
                 break;
             }
 
@@ -151,6 +158,10 @@ uint8_t App::menu() {
             default: break;
         }
         if(choice == 10) {
+
+            if(highlight == 0) {
+                return 5;
+            }
 
             if(highlight == 1) {
                 return 1;
@@ -375,5 +386,97 @@ uint8_t App::remove_vocab_confirm() {
             return 2;
         }
     }
+    return 0;
+}
+
+uint8_t App::review() {
+
+    struct TempVocab {
+        Vocabulary* vocab;
+        bool has_answered = false;
+    };
+
+    std::vector<Vocabulary*> reviewable_vocab = m_scheduler->reviewable_vocabulary();
+    
+    std::vector<TempVocab> temporary_vocabs;
+
+    for(size_t i = 0; i < MAX_TEMP_VOCAB; i++) {
+        if(reviewable_vocab.size() > 0) {
+            size_t which = rand() % reviewable_vocab.size();
+            TempVocab tv = {reviewable_vocab[which], false};
+            reviewable_vocab.erase(reviewable_vocab.begin() + which);
+            temporary_vocabs.push_back(tv);
+        }
+    }
+
+    printw("%d", temporary_vocabs.size());
+    refresh();
+    getch();
+
+    while(temporary_vocabs.size() > 0) {
+
+        size_t random_vocab = rand() % temporary_vocabs.size();
+        JMEntry* jmentry = m_jmdict->entry_from_sequence(temporary_vocabs[random_vocab].vocab->sequence_id());
+        static std::vector<Line> lines;
+        lines.clear();
+        fill_lines(jmentry, lines);
+        int32_t scroll = 0;
+
+        clear();
+        status_bar();
+
+        std::string level = "Level " + std::to_string(temporary_vocabs[random_vocab].vocab->level());
+        int32_t x, y;
+        getmaxyx(stdscr, y, x);
+        move(1, x/2 - level.size()/2-1);
+        printw(level.c_str());
+
+        draw_entry(scroll, true, lines);
+        action_bar("Press any key to reveal definition");
+        refresh();
+        getch();
+        while(true) {
+            clear();
+            move(0, 0);
+            status_bar();
+            std::string dyktw("Did you know the word?");
+            int32_t x, y;
+            getmaxyx(stdscr, y, x);
+            move(1, x/2 - dyktw.size()/2);
+            printw(dyktw.c_str());
+            draw_entry(scroll, false, lines);
+            action_bar("[Y]es to level up, [N]o to level down");
+
+            int32_t input = getch();
+
+            if(input == 'y') {
+
+                //decrease level if a previous attempt was unsuccessful
+                if(temporary_vocabs[random_vocab].has_answered) {
+                    temporary_vocabs[random_vocab].vocab->decrease_level();
+                } else {
+                    //otherwise increase the level if this attempt was the first one
+                    temporary_vocabs[random_vocab].vocab->increase_level();
+                }
+
+                //replace the vocab with a new one
+                temporary_vocabs.erase(temporary_vocabs.begin() + random_vocab);
+                if(reviewable_vocab.size() > 0) {
+                    size_t which = rand() % reviewable_vocab.size();
+                    TempVocab tv = {reviewable_vocab[which], false};
+                    reviewable_vocab.erase(reviewable_vocab.begin() + which);
+                }
+                break;
+            } else if(input == 'n') {
+                temporary_vocabs[random_vocab].has_answered = true;
+                break;
+            } else if(input == KEY_UP) {
+                scroll--;
+            } else if(input == KEY_DOWN) {
+                scroll++;
+            }
+        }
+    }
+
     return 0;
 }
