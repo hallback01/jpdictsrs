@@ -3,6 +3,7 @@
 #include <locale>
 #include <codecvt>
 #include <cstring>
+#include "scheduler.h"
 #include "app.h"
 #include "jmdict.h"
 
@@ -52,12 +53,12 @@ App::App(JMDict* dictionary, Scheduler* scheduler) {
             }
 
             case 3: {
-                //choice = fetch_failed();
+                choice = no_results();
                 break;
             }
 
             case 4: {
-                //choice = confirm_add_new_word();
+                choice = remove_vocab_confirm();
                 break;
             }
 
@@ -87,10 +88,23 @@ void App::status_bar() {
     printw("JPDictSRS");
 
     move(0, 0);
-    size_t reviewable_vocab = 0;//m_scheduler->reviewable_vocabulary_count();
+    size_t reviewable_vocab = m_scheduler->reviewable_vocabulary_count();
     printw("%d vocabulary to review now", reviewable_vocab);
     move(1, 0);
 
+    attroff(COLOR_PAIR(5));
+}
+
+void App::action_bar(const std::string& string) {
+    int32_t x, y;
+    getmaxyx(stdscr, y, x);
+    attron(COLOR_PAIR(5));
+    move(y - 1, 0);
+    for(int i = 0; i < x; i++) {
+        printw(" ");
+    }
+    move(y - 1, 0);
+    printw(string.c_str());
     attroff(COLOR_PAIR(5));
 }
 
@@ -99,6 +113,7 @@ uint8_t App::menu() {
     curs_set(0);
     keypad(stdscr, true);
     noecho();
+    action_bar("Enter to choose, Navigate with Arrow Keys");
 
     std::string choices[3] = {"Review", "Search", "Quit"};
     int choice;
@@ -150,16 +165,26 @@ uint8_t App::menu() {
 }
 
 char search_string[256];
+size_t saved_seq_id = 0;
+int32_t saved_scroll = 0;
+int32_t saved_current_word = 0;
+void reset_saved_search() {
+    saved_seq_id = 0;
+    saved_scroll = 0;
+    saved_current_word = 0;
+    memset(search_string, 0, 256);
+}
 
 uint8_t App::search() {
-    memset(search_string, 0, 256);
+    reset_saved_search();
     int32_t x, y;
     getmaxyx(stdscr, y, x);
     echo();
     status_bar();
-    printw("Type in what you want to search for\nYou can search with english, kana and kanji\nPress enter to continue");
-    move(y - 1, 0);
     curs_set(2);
+    printw("Type in what you want to search for\nYou can search with english, kana and kanji");
+    action_bar("Press enter to search");
+    move(y - 2, 0);
     noraw();
     getstr(search_string);
 
@@ -230,16 +255,20 @@ void App::fill_lines(JMEntry* entry, std::vector<Line>& info) {
 
 uint8_t App::search_result() {
     std::vector<size_t> entries = m_jmdict->search(search_string);
+    if(entries.size() == 0) {
+        return 3;
+    }
     noecho();
     raw();
     curs_set(0);
-    int32_t current_word = 0;
-    int32_t scroll = 0;
+    int32_t current_word = saved_current_word;
+    int32_t scroll = saved_scroll;
     while(true) {
 
         static std::vector<Line> lines;
         lines.clear();
-        fill_lines(m_jmdict->entry(entries[current_word]), lines);
+        JMEntry* jmentry = m_jmdict->entry(entries[current_word]);
+        fill_lines(jmentry, lines);
 
         int32_t x, y;
         getmaxyx(stdscr, y, x);
@@ -248,20 +277,36 @@ uint8_t App::search_result() {
         std::string info = "Entries found " + std::to_string(current_word + 1) + "/" + std::to_string(entries.size());
         move(1, x/2 - (info.size() / 2)-1);
         printw(info.c_str());
-        move(y - 1, 0);
-        attron(COLOR_PAIR(5));
-        for(int i = 0; i < x; i++) {
-            printw(" ");
+
+        Vocabulary* vocab = m_scheduler->vocabulary(jmentry->sequence_index());
+        bool can_add = true;
+        if(vocab) {
+            action_bar("[Q]uit, [B]ack, [R]emove word, Navigate with Arrow Keys");
+            can_add = false;
+        } else {
+            action_bar("[Q]uit, [B]ack, [A]dd word, Navigate with Arrow Keys");
         }
-        move(y - 1, 0);
-        printw("[Q]uit, [B]ack, [A]dd word, [R]emove word, Navigate with Arrow Keys");
-        attroff(COLOR_PAIR(5));
+
         draw_entry(scroll, false, lines);
         refresh();
         int32_t input = getch();
         switch(input) {
             case 'q': return 0;
             case 'b': return 1;
+            case 'a': {
+                if(can_add) {
+                    //add vocab
+                    m_scheduler->add(jmentry->sequence_index());
+                }
+                break;
+            }
+            case 'r': {
+                if(!can_add) {
+                    saved_seq_id = jmentry->sequence_index();
+                    return 4;
+                }
+                break;
+            }
             case KEY_RIGHT: {
                 current_word++;
                 scroll = 0;
@@ -283,6 +328,9 @@ uint8_t App::search_result() {
             default: break;
         }
 
+        saved_current_word = current_word;
+        saved_scroll = scroll;
+
         //clamp
         if(current_word < 0) {
             current_word = entries.size() - 1;
@@ -292,5 +340,40 @@ uint8_t App::search_result() {
         }
     }
 
+    return 0;
+}
+
+uint8_t App::no_results() {
+    status_bar();
+    curs_set(0);
+    printw("Search \"%s\" yielded no results", search_string);
+    action_bar("Press any key to return to the main menu");
+    getch();
+    return 0;
+}
+
+uint8_t App::remove_vocab_confirm() {
+    status_bar();
+    curs_set(0);
+    JMEntry* jmentry = m_jmdict->entry_from_sequence(saved_seq_id);
+
+    if(jmentry) {
+        if(jmentry->keb_count() > 0) {
+            printw("Are you sure that you want to remove\n%s?", jmentry->keb(0)->c_str());
+        } else {
+            printw("Are you sure that you want to remove\n%s?", jmentry->reb(0)->c_str());
+        }
+    }
+
+    action_bar("[Y]es, [N]o");
+    while(true) {
+        int32_t input = getch();
+        if(input == 'n') {
+            return 2;
+        } else if(input == 'y') {
+            m_scheduler->remove(saved_seq_id);
+            return 2;
+        }
+    }
     return 0;
 }

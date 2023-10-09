@@ -21,10 +21,13 @@ class App {
         uint8_t menu();
         uint8_t search();
         uint8_t search_result();
+        uint8_t no_results();
+        uint8_t remove_vocab_confirm();
 
         void draw_entry(int32_t& scroll, bool hide_definition, std::vector<Line>& info);
         void fill_lines(JMEntry* entry, std::vector<Line>& info);
         void status_bar();
+        void action_bar(const std::string& string);
 
         uint8_t fetch_word_data();
         uint8_t fetch_failed();
