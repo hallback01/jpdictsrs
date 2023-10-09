@@ -409,10 +409,6 @@ uint8_t App::review() {
         }
     }
 
-    printw("%d", temporary_vocabs.size());
-    refresh();
-    getch();
-
     while(temporary_vocabs.size() > 0) {
 
         size_t random_vocab = rand() % temporary_vocabs.size();
