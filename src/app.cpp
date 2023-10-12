@@ -466,6 +466,7 @@ uint8_t App::review() {
                     size_t which = rand() % reviewable_vocab.size();
                     TempVocab tv = {reviewable_vocab[which], false};
                     reviewable_vocab.erase(reviewable_vocab.begin() + which);
+                    temporary_vocabs.push_back(tv);
                 }
                 break;
             } else if(input == 'n') {
