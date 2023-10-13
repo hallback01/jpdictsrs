@@ -183,6 +183,16 @@ bool JMDict::parse_entry(size_t& position, std::string& jmdict) {
             jmsense.add_extra_info(sinfo);
         }
 
+        //misc
+        sense_pos = 0;
+        while(true) {
+            std::string misc = get_element("misc", sense, sense_pos, &sense_pos);
+            if(sense_pos == std::string::npos) {
+                break;
+            }
+            jmsense.add_extra_info(m_entities[misc]);
+        }
+
         jmentry.add_sense(jmsense);
     }
 
