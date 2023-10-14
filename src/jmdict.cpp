@@ -162,6 +162,17 @@ bool JMDict::parse_entry(size_t& position, std::string& jmdict) {
             jmsense.add_gloss(gloss);
         }
 
+        //antonym
+        sense_pos = 0;
+        while(true) {
+            std::string ant = get_element("ant", sense, sense_pos, &sense_pos);
+            if(sense_pos == std::string::npos) {
+                break;
+            }
+            ant = std::string("Antonym \"") + ant + std::string("\"");
+            jmsense.add_extra_info(ant);
+        }
+
         //xref
         sense_pos = 0;
         while(true) {
