@@ -2,7 +2,7 @@
 #include <string>
 #include "buffer.h"
 
-#define LEVEL_0_TIME 0          /*Right away*/
+#define LEVEL_0_TIME 300        /*5 minutes*/
 #define LEVEL_1_TIME 14400      /*4 hours*/
 #define LEVEL_2_TIME 28800      /*8 hours*/
 #define LEVEL_3_TIME 72000      /*20 hours*/
