@@ -103,6 +103,11 @@ void App::status_bar() {
     }
     move(1, 0);
 
+    size_t total_inputted_vocab = m_scheduler->total_vocabulary_count();
+    size_t digits = total_inputted_vocab > 0 ? (int) log10 ((double) total_inputted_vocab) + 1 : 1;
+    move(0, y - digits - 7);
+    printw("Total: %d", total_inputted_vocab);
+
     attroff(COLOR_PAIR(5));
 }
 

@@ -11,6 +11,7 @@
 #define LEVEL_6_TIME 1180800    /*13 2/3 days*/
 #define LEVEL_7_TIME 2390400    /*27 2/3 days*/
 #define LEVEL_8_TIME 9648000    /*3 2/3 months*/
+#define LEVEL_9_TIME 23667694   /*9 months */
 
 class Vocabulary {
     public:

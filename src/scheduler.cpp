@@ -84,6 +84,9 @@ std::vector<Vocabulary*> Scheduler::reviewable_vocabulary() {
     vocab_vec.clear();
     for(size_t i = 0; i < m_vocabulary.size(); i++) {
         if(epoch > m_vocabulary[i]->next_level_time()) {
+            if(m_vocabulary[i]->is_completed()) {
+                continue;
+            }
             vocab_vec.push_back(m_vocabulary[i]);
         } else {
             break;
@@ -97,6 +100,9 @@ size_t Scheduler::reviewable_vocabulary_count() {
     int64_t epoch = Jikan::epoch_time_seconds();
     for(size_t i = 0; i < m_vocabulary.size(); i++) {
         if(epoch > m_vocabulary[i]->next_level_time()) {
+            if(m_vocabulary[i]->is_completed()) {
+                continue;
+            }
             count++;
         } else {
             break;
@@ -112,6 +118,9 @@ std::vector<Vocabulary*> Scheduler::vocabulary_inside_time_interval(int64_t seco
     vocab.clear();
     for(size_t i = 0; i < m_vocabulary.size(); i++) {
         if((epoch + seconds) > m_vocabulary[i]->next_level_time()) {
+            if(m_vocabulary[i]->is_completed()) {
+                continue;
+            }
             vocab.push_back(m_vocabulary[i]);
         } else {
             break;
@@ -121,11 +130,18 @@ std::vector<Vocabulary*> Scheduler::vocabulary_inside_time_interval(int64_t seco
     return vocab;
 }
 
+size_t Scheduler::total_vocabulary_count() {
+    return m_vocabulary.size();
+}
+
 size_t Scheduler::vocabulary_inside_time_interval_count(int64_t seconds) {
     size_t count = 0;
     int64_t epoch = Jikan::epoch_time_seconds();
     for(size_t i = 0; i < m_vocabulary.size(); i++) {
         if((epoch + seconds) > m_vocabulary[i]->next_level_time()) {
+            if(m_vocabulary[i]->is_completed()) {
+                continue;
+            }
             count++;
         } else {
             break;

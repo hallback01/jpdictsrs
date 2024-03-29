@@ -30,13 +30,13 @@ void Vocabulary::decrease_level() {
     if(m_level > 0) {
         m_level--;
     }
-    m_level = std::clamp<uint8_t>(m_level, 0, 9);
+    m_level = std::clamp<uint8_t>(m_level, 0, 10);
     m_next_level_time = Jikan::epoch_time_seconds() + level_time(m_level);
 }
 
 void Vocabulary::increase_level() {
     m_level++;
-    m_level = std::clamp<uint8_t>(m_level, 0, 9);
+    m_level = std::clamp<uint8_t>(m_level, 0, 10);
     m_next_level_time = Jikan::epoch_time_seconds() + level_time(m_level);
 }
 
@@ -49,7 +49,7 @@ uint8_t Vocabulary::level() {
 }
 
 bool Vocabulary::is_completed() {
-    return m_level == 9;
+    return m_level == 10;
 }
 
 uint64_t Vocabulary::sequence_id() {
@@ -67,6 +67,7 @@ int64_t Vocabulary::level_time(uint8_t level) {
         case 6: return LEVEL_6_TIME;
         case 7: return LEVEL_7_TIME;
         case 8: return LEVEL_8_TIME;
+        case 9: return LEVEL_9_TIME;
         default: return 0;
     }
 }
