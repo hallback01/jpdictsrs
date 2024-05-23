@@ -11,6 +11,7 @@ class Scheduler {
         ~Scheduler();
         bool add(uint64_t seq_id);
         void remove(uint64_t seq_id);
+        size_t seconds_until_next_review();
         size_t total_vocabulary_count();
         std::vector<Vocabulary*> reviewable_vocabulary();
         size_t reviewable_vocabulary_count();

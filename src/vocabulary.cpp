@@ -34,6 +34,10 @@ void Vocabulary::decrease_level() {
     m_next_level_time = Jikan::epoch_time_seconds() + level_time(m_level);
 }
 
+void Vocabulary::stay_at_level() {
+    m_next_level_time = Jikan::epoch_time_seconds() + (level_time(m_level) / 2.0);
+}
+
 void Vocabulary::increase_level() {
     m_level++;
     m_level = std::clamp<uint8_t>(m_level, 0, 10);

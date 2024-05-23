@@ -21,6 +21,7 @@ class Vocabulary {
 
         void decrease_level();
         void increase_level();
+        void stay_at_level(); //the level was hard!, stay at tge same level but make the wait time half the time
         int64_t next_level_time();
         uint8_t level();
         bool is_completed(); //a.k.a is level equal to 8?

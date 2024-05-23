@@ -95,6 +95,18 @@ std::vector<Vocabulary*> Scheduler::reviewable_vocabulary() {
     return vocab_vec;
 }
 
+size_t Scheduler::seconds_until_next_review() {
+    int64_t epoch = Jikan::epoch_time_seconds();
+    for(size_t i = 0; i < m_vocabulary.size(); i++) {
+        if(!m_vocabulary[i]->is_completed()) {
+            return m_vocabulary[i]->next_level_time() - epoch;
+        } else {
+            continue;
+        }
+    }
+    return 0;
+}
+
 size_t Scheduler::reviewable_vocabulary_count() {
     size_t count = 0;
     int64_t epoch = Jikan::epoch_time_seconds();

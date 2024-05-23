@@ -91,15 +91,22 @@ void App::status_bar() {
     for(size_t i = 0; i < y; i++) {
         printw(" ");
     }
-    move(0, y/2 - 5);
-    printw("JPDictSRS");
+    //move(0, y/2 - 5);
+    //printw("JPDictSRS");
 
     move(0, 0);
     size_t reviewable_vocab = m_scheduler->reviewable_vocabulary_count();
     if(reviewable_vocab != 0) {
-        printw("%d vocabulary to review now", reviewable_vocab);
+        printw("%d vocab now!", reviewable_vocab);
     } else {
-        printw("%d vocabulary due in the next day", m_scheduler->vocabulary_inside_time_interval_count(86400));
+        size_t seconds = m_scheduler->seconds_until_next_review();
+        size_t hours = seconds / 3600;
+        size_t minutes = (seconds - (hours * 3600)) / 60;
+        size_t sec = (seconds - (hours * 3600) - (minutes * 60));
+        const char* ha = hours < 10 ? "0" : "";
+        const char* ma = minutes < 10 ? "0" : "";
+        const char* sa = sec < 10 ? "0" : "";
+        printw("%d vocab in 24h! Next is in %s%d:%s%d:%s%d hours!", m_scheduler->vocabulary_inside_time_interval_count(86400), ha, hours, ma, minutes, sa, sec);
     }
     move(1, 0);
 
@@ -125,17 +132,18 @@ void App::action_bar(const std::string& string) {
 }
 
 uint8_t App::menu() {
-    status_bar();
-    curs_set(0);
-    keypad(stdscr, true);
-    noecho();
-    action_bar("Enter to choose, Navigate with Arrow Keys");
 
     std::string choices[3] = {"Review", "Search", "Quit"};
     int choice;
     int highlight = 0;
 
     while(true) {
+        clear();
+        status_bar();
+        curs_set(0);
+        keypad(stdscr, true);
+        noecho();
+        action_bar("Enter to choose, Navigate with Arrow Keys");
         int32_t x, y;
         getmaxyx(stdscr, y, x);
         raw();
@@ -450,7 +458,7 @@ uint8_t App::review() {
             move(1, x/2 - dyktw.size()/2);
             printw(dyktw.c_str());
             draw_entry(scroll, false, lines);
-            action_bar("[Y]es to level up, [N]o to level down");
+            action_bar("[Y]es to level up, [N]o to level down, [H]ard - stay at level /w half the time");
 
             int32_t input = getch();
 
@@ -477,6 +485,27 @@ uint8_t App::review() {
             } else if(input == 'n') {
                 temporary_vocabs[random_vocab].has_answered = true;
                 break;
+            } else if(input == 'h') {
+                
+                //decrease level if a previous attempt was unsuccessful
+                if(temporary_vocabs[random_vocab].has_answered) {
+                    temporary_vocabs[random_vocab].vocab->decrease_level();
+                } else {
+                    //otherwise keep same level but half the time
+                    temporary_vocabs[random_vocab].vocab->stay_at_level();
+                }
+                m_scheduler->sort();
+
+                //replace the vocab with a new one
+                temporary_vocabs.erase(temporary_vocabs.begin() + random_vocab);
+                if(reviewable_vocab.size() > 0) {
+                    size_t which = rand() % reviewable_vocab.size();
+                    TempVocab tv = {reviewable_vocab[which], false};
+                    reviewable_vocab.erase(reviewable_vocab.begin() + which);
+                    temporary_vocabs.push_back(tv);
+                }
+                break;
+
             } else if(input == KEY_UP) {
                 scroll--;
             } else if(input == KEY_DOWN) {
